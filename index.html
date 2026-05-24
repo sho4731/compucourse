@@ -1,0 +1,794 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="theme-color" content="#1a1a1a">
+  <title>CompuCourse</title>
+  <link rel="manifest" href="manifest.json">
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+    html, body { height: 100%; }
+
+    body {
+      background: #111;
+      color: #d4e8f0;
+      font-family: Arial, 'Helvetica Neue', sans-serif;
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      user-select: none;
+      -webkit-user-select: none;
+      touch-action: none;
+    }
+
+    /* ── HEADER ────────────────────────────── */
+    #hdr {
+      flex-shrink: 0;
+      background: #1c1c18;
+      padding: 5px 14px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      border-bottom: 1px solid #3a3a2e;
+    }
+    #hdr h1 { font-size: 22px; font-weight: 900; letter-spacing: 3px; color: #f0f0e0; }
+    #hdr .brand { font-size: 13px; color: #777766; font-style: italic; }
+
+    /* ── INPUT PANEL ────────────────────────── */
+    #ctrl {
+      flex-shrink: 0;
+      background: #181810;
+      border-bottom: 1px solid #2e2e22;
+      padding: 7px 10px;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px 14px;
+    }
+
+    .cg { display: flex; flex-direction: row; align-items: center; gap: 8px; }
+    .cg label {
+      font-size: 15px; letter-spacing: 0.5px; color: #7a8890;
+      white-space: nowrap;
+    }
+
+    /* number inputs */
+    input[type=number] {
+      background: #0c0c0a;
+      border: 1.5px solid #3e3e2e;
+      border-radius: 5px;
+      color: #f0f0e0;
+      font-size: 22px;
+      font-weight: bold;
+      text-align: center;
+      outline: none;
+      padding: 4px 2px;
+      -moz-appearance: textfield;
+      cursor: text;
+    }
+    input[type=number]:focus { border-color: #888866; background: #141410; }
+    input[type=number]::-webkit-inner-spin-button,
+    input[type=number]::-webkit-outer-spin-button { -webkit-appearance: none; }
+
+    .num-wide  { width: 76px; }
+    .num-mid   { width: 68px; }
+
+    /* range hint text */
+    .range-hint {
+      font-size: 15px; color: #666655; font-weight: normal;
+      letter-spacing: 0; margin-left: 4px; white-space: nowrap;
+    }
+
+    /* second row: tacking / jibing */
+    #ctrl2 {
+      flex-shrink: 0;
+      background: #161610;
+      border-bottom: 1px solid #282818;
+      padding: 5px 10px;
+      display: flex;
+      gap: 16px;
+      align-items: center;
+    }
+    .ag { display: flex; align-items: center; gap: 5px; }
+    .ag label { font-size: 15px; color: #6a7a7a; letter-spacing: 0.5px; white-space: nowrap; }
+    .ag .deg  { font-size: 14px; color: #8a9898; }
+
+    /* derived display chips */
+    .derived {
+      margin-left: auto; display: flex; gap: 8px; align-items: center;
+    }
+    .chip {
+      background: #0c0c0a; border: 1px solid #2e2e22;
+      border-radius: 4px; padding: 3px 8px;
+      font-size: 11px; color: #6a8a8a; letter-spacing: 0.5px;
+    }
+    .chip b { color: #aaccaa; font-size: 14px; }
+
+    /* ── CANVAS ─────────────────────────────── */
+    #wrap {
+      flex: 1; min-height: 0;
+      display: flex; justify-content: center; align-items: center;
+      background: #0e0e0a;
+    }
+    canvas { display: block; touch-action: none; cursor: grab; }
+    canvas:active { cursor: grabbing; }
+
+    /* ── READOUT ────────────────────────────── */
+    #readout {
+      flex-shrink: 0;
+      background: #141410;
+      border-top: 1px solid #2a2a1e;
+      padding: 6px 8px;
+      display: grid;
+      grid-template-columns: repeat(4,1fr);
+      gap: 4px;
+    }
+    .rc { background: #0c0c0a; border-radius: 6px; padding: 5px 3px; text-align: center; }
+    .rc.ww { border: 1.5px solid #bbbb55; }
+    .rc.sb { border: 1.5px solid #44aa44; }
+    .rc.pt { border: 1.5px solid #cc4444; }
+    .rc.rn { border: 1.5px solid #4488cc; }
+    .rc-icon { font-size: 12px; line-height: 1.2; }
+    .rc-lbl  { font-size: 9px; color: #607080; margin: 1px 0; }
+    .rc-val  { font-size: 22px; font-weight: 900; font-variant-numeric: tabular-nums; }
+    .ww .rc-val { color: #dddd77; }
+    .sb .rc-val { color: #55cc55; }
+    .pt .rc-val { color: #ee5555; }
+    .rn .rc-val { color: #55aaee; }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<div id="hdr">
+  <h1>COMPUCOURSE</h1>
+</div>
+
+<!-- MAIN INPUTS -->
+<div id="ctrl">
+  <div class="cg">
+    <label>風軸</label>
+    <input type="number" class="num-wide" id="n-wind" value="0" min="0" max="359" step="1">
+    <span style="color:#8a9898;font-size:16px;">°</span>
+  </div>
+  <div class="cg">
+    <label>上マーク角度</label>
+    <input type="number" class="num-wide" id="n-mark" value="0" min="0" max="359" step="1">
+    <span style="color:#8a9898;font-size:16px;">°</span>
+  </div>
+</div>
+
+<!-- TACKING / JIBING INPUTS -->
+<div id="ctrl2">
+  <div class="ag">
+    <label>タッキングアングル</label>
+    <input type="number" class="num-mid" id="n-tack" value="84" min="40" max="130" step="1">
+    <span class="deg">°</span>
+    <span class="range-hint">（40〜130°）</span>
+  </div>
+  <div class="ag">
+    <label>ジャイビングアングル</label>
+    <input type="number" class="num-mid" id="n-jibe" value="40" min="20" max="100" step="1">
+    <span class="deg">°</span>
+    <span class="range-hint">（20〜100°）</span>
+  </div>
+</div>
+
+<!-- CANVAS -->
+<div id="wrap">
+  <canvas id="dial"></canvas>
+</div>
+
+<!-- READOUT -->
+<div id="readout">
+  <div class="rc ww">
+    <div class="rc-icon">▲</div>
+    <div class="rc-lbl">風上マーク</div>
+    <div class="rc-val" id="rv-ww">000°</div>
+  </div>
+  <div class="rc sb">
+    <div class="rc-icon">↖</div>
+    <div class="rc-lbl">スタボー上り</div>
+    <div class="rc-val" id="rv-sb">318°</div>
+  </div>
+  <div class="rc pt">
+    <div class="rc-icon">↗</div>
+    <div class="rc-lbl">ポート上り</div>
+    <div class="rc-val" id="rv-pt">042°</div>
+  </div>
+  <div class="rc rn">
+    <div class="rc-icon">▼</div>
+    <div class="rc-lbl">風下マーク</div>
+    <div class="rc-val" id="rv-rn">180°</div>
+  </div>
+</div>
+
+<script>
+// ═══════════════════════════════════════════════════
+//  STATE
+// ═══════════════════════════════════════════════════
+let windAxis  = 0;    // 風軸: compass bearing wind comes FROM
+let markBear  = 0;    // 上マーク角度: compass bearing to windward mark
+let tackAngle = 84;   // タッキングアングル = 2 × closeAng
+let jibeAngle = 40;   // ジャイビングアングル = 2 × (180 - runAng)
+
+// Derived:  closeAng = tackAngle/2,  runAng = 180 - jibeAngle/2
+function getClose() { return tackAngle / 2; }
+function getRun()   { return 180 - jibeAngle / 2; }
+
+const canvas = document.getElementById('dial');
+const ctx    = canvas.getContext('2d');
+const PI2    = Math.PI * 2;
+const D2R    = Math.PI / 180;
+
+let lsz = 300;   // logical canvas size (CSS px)
+let R, Ri, ri;   // outer radius, disc outer, inner-circle radius
+
+// ═══════════════════════════════════════════════════
+//  MATH HELPERS
+// ═══════════════════════════════════════════════════
+function norm(d) { return ((d % 360) + 360) % 360; }
+function fmt(d)  { return norm(d).toString().padStart(3,'0') + '°'; }
+
+// angle convention: 0 = up (north on canvas), clockwise
+function polar(cx, cy, r, deg) {
+  const rad = (deg - 90) * D2R;
+  return { x: cx + r * Math.cos(rad), y: cy + r * Math.sin(rad) };
+}
+
+// Filled pie slice: angles in "0=up, CW" convention
+function wedge(cx, cy, r, a1, a2, fill) {
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.arc(cx, cy, r, (a1 - 90) * D2R, (a2 - 90) * D2R);
+  ctx.closePath();
+  ctx.fillStyle = fill;
+  ctx.fill();
+}
+
+// Full diameter chord (line through centre at angleDeg)
+function chord(cx, cy, r, angleDeg, color, lw) {
+  const p1 = polar(cx, cy, r * 0.96, angleDeg);
+  const p2 = polar(cx, cy, r * 0.96, angleDeg + 180);
+  ctx.beginPath();
+  ctx.moveTo(p1.x, p1.y);
+  ctx.lineTo(p2.x, p2.y);
+  ctx.strokeStyle = color;
+  ctx.lineWidth   = lw;
+  ctx.lineCap = 'round';
+  ctx.stroke();
+  ctx.lineCap = 'butt';
+}
+
+// Half-line: from centre to edge (spoke), no through-line
+function halfLine(cx, cy, r, angleDeg, color, lw) {
+  const tip = polar(cx, cy, r * 0.91, angleDeg);
+  ctx.beginPath();
+  ctx.moveTo(cx, cy);
+  ctx.lineTo(tip.x, tip.y);
+  ctx.strokeStyle = color;
+  ctx.lineWidth   = lw * 1.2;
+  ctx.lineCap = 'round';
+  ctx.stroke();
+  ctx.lineCap = 'butt';
+}
+
+// ═══════════════════════════════════════════════════
+//  RESIZE  (Chrome-safe, DPR-aware)
+// ═══════════════════════════════════════════════════
+function resizeCanvas() {
+  const wrap = document.getElementById('wrap');
+  const w = wrap.clientWidth, h = wrap.clientHeight;
+  if (!w || !h) return;
+
+  const sz = Math.floor(Math.min(w, h) * 0.97);
+  lsz = sz;
+
+  const dpr = window.devicePixelRatio || 1;
+  canvas.style.width  = sz + 'px';
+  canvas.style.height = sz + 'px';
+  canvas.width  = Math.round(sz * dpr);
+  canvas.height = Math.round(sz * dpr);
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+  R  = sz * 0.460;       // outer edge of compass ring
+  Ri = R  * 0.848;       // inner edge of compass ring / outer edge of disc
+  ri = Ri * 0.780;       // inner white circle radius (大きめ)
+
+  draw();
+}
+
+// ═══════════════════════════════════════════════════
+//  MAIN DRAW
+// ═══════════════════════════════════════════════════
+function draw() {
+  if (!R) return;
+  const cx = lsz / 2, cy = lsz / 2;
+  ctx.clearRect(0, 0, lsz, lsz);
+
+  // ── [1] Coloured disc — FIXED (wind axis always at top)
+  drawDisc(cx, cy);
+
+  // ── [2] Inner white circle — lines fixed, arrow rotates
+  drawInnerCircle(cx, cy);
+
+  // ── [3] Compass ring — ROTATES so windAxis appears at top
+  drawCompassRing(cx, cy);
+
+  // ── [4] Centre pin
+  ctx.beginPath(); ctx.arc(cx, cy, R * 0.020, 0, PI2);
+  ctx.fillStyle = '#ccccaa'; ctx.fill();
+  ctx.strokeStyle = '#666655'; ctx.lineWidth = 1; ctx.stroke();
+
+  updateReadout();
+}
+
+// ═══════════════════════════════════════════════════
+//  [1] COLOURED DISC  (fixed – wind always at top)
+// ═══════════════════════════════════════════════════
+function drawDisc(cx, cy) {
+  const r     = Ri;
+  const close = getClose();
+  const run   = getRun();
+
+  ctx.save();
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, PI2); ctx.clip();
+
+  // ── ディスクは (windAxis - markBear) で回転
+  //    リングが -markBear 回転した基準上での windAxis 方向を表示
+  ctx.translate(cx, cy);
+  ctx.rotate(norm(windAxis - markBear) * D2R);
+  ctx.translate(-cx, -cy);
+
+  // Base cream/beige
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, PI2);
+  ctx.fillStyle = '#cbc6a0'; ctx.fill();
+
+  // ── Sectors ─────────────────────────────────────
+  // Windward zone (cream, ±close around top)
+  wedge(cx, cy, r, -close, close, '#e5e1ca');
+
+  // Port reach (red) — RIGHT side (starboard wind side → port tack)
+  wedge(cx, cy, r, close, run, '#cc4040');
+
+  // Run zone (light blue)
+  wedge(cx, cy, r, run, 360 - run, '#a8cce0');
+
+  // Starboard reach (green) — LEFT side
+  wedge(cx, cy, r, 360 - run, 360 - close, '#4aaa50');
+
+  // ── Boundary lines
+  [close, run, 360 - run, 360 - close].forEach(a => {
+    const p0 = polar(cx, cy, ri * 1.05, a);
+    const p1 = polar(cx, cy, r,         a);
+    ctx.beginPath(); ctx.moveTo(p0.x, p0.y); ctx.lineTo(p1.x, p1.y);
+    ctx.strokeStyle = 'rgba(0,0,0,0.15)'; ctx.lineWidth = 1.2; ctx.stroke();
+  });
+
+  // ── Sector labels
+  const fs = r * 0.080;
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+
+  ctx.font = `bold ${fs * 0.72}px Arial`;
+  ctx.fillStyle = '#3a3820';
+  ctx.fillText('WINDWARD', cx, cy - r * 0.89);
+  ctx.fillText('LEG',      cx, cy - r * 0.82);
+
+  // RIGHT side = PORT REACH (red)
+  ctx.save();
+  ctx.translate(cx + r * 0.870, cy - r * 0.02);
+  ctx.rotate(90 * D2R);
+  ctx.font = `bold ${fs * 0.56}px Arial`;
+  ctx.fillStyle = '#621515';
+  ctx.fillText('PORT REACH', 0, 0);
+  ctx.restore();
+
+  // LEFT side = STARBOARD REACH (green)
+  ctx.save();
+  ctx.translate(cx - r * 0.870, cy - r * 0.02);
+  ctx.rotate(-90 * D2R);
+  ctx.font = `bold ${fs * 0.56}px Arial`;
+  ctx.fillStyle = '#174217';
+  ctx.fillText('STARBOARD REACH', 0, 0);
+  ctx.restore();
+
+  ctx.font = `bold ${fs * 0.72}px Arial`;
+  ctx.fillStyle = '#18286a';
+  ctx.fillText('RUN', cx, cy + r * 0.88);
+
+  // ── + markers at beam-reach (just outside inner circle)
+  const pls = r * 0.115;
+  ctx.font = `bold ${pls}px Arial`;
+  // LEFT = starboard reach (green +)
+  const sp = polar(cx, cy, ri + r * 0.04, 270);
+  ctx.fillStyle = '#1a7a1a';
+  ctx.fillText('+', sp.x, sp.y);
+  // RIGHT = port reach (red +)
+  const pp = polar(cx, cy, ri + r * 0.04, 90);
+  ctx.fillStyle = '#8a1a1a';
+  ctx.fillText('+', pp.x, pp.y);
+
+  ctx.restore();
+}
+
+// ═══════════════════════════════════════════════════
+//  [2] INNER WHITE CIRCLE
+//      Entire contents rotate by (markBear - windAxis)
+//      Starting line = only full through-chord
+//      Close-hauled & running = half-lines from centre
+// ═══════════════════════════════════════════════════
+function drawInnerCircle(cx, cy) {
+  const r     = ri;
+  const close = getClose();
+  const run   = getRun();
+  const rot   = norm(windAxis - markBear);   // リング基準での風軸方向
+
+  ctx.save();
+  // Clip to inner circle
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, PI2); ctx.clip();
+
+  // White background
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, PI2);
+  ctx.fillStyle = '#f6f5ee'; ctx.fill();
+
+  const lw = Math.max(1.2, r * 0.030);
+
+  // ── Rotate ENTIRE circle contents by windAxis ──
+  ctx.translate(cx, cy);
+  ctx.rotate(rot * D2R);
+  ctx.translate(-cx, -cy);
+
+  // ── [A] STARTING LINE — full horizontal chord (gold dashed) ──
+  ctx.save();
+  ctx.setLineDash([r * 0.060, r * 0.032]);
+  ctx.beginPath();
+  ctx.moveTo(cx - r * 0.93, cy);
+  ctx.lineTo(cx + r * 0.93, cy);
+  ctx.strokeStyle = '#c0a000';
+  ctx.lineWidth   = lw;
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+
+  // "STARTING LINE" label
+  ctx.font = `${r * 0.094}px Arial`;
+  ctx.fillStyle    = '#887700';
+  ctx.textAlign    = 'center';
+  ctx.textBaseline = 'bottom';
+  ctx.fillText('STARTING LINE', cx, cy - r * 0.03);
+
+  // S / P labels  (スターボード＝左側、ポート＝右側)
+  ctx.font = `bold ${r * 0.120}px Arial`;
+  ctx.textBaseline = 'top';
+  ctx.fillStyle = '#665500';
+  ctx.fillText('S', cx - r * 0.68, cy + r * 0.025);
+  ctx.fillStyle = '#553300';
+  ctx.fillText('P', cx + r * 0.55, cy + r * 0.025);
+
+  // ── [B] CLOSE-HAULED: half-lines from centre ──────────────
+  // Starboard tack: wind on right → boat heads upper-LEFT (360-close)
+  halfLine(cx, cy, r, 360 - close, '#229922', lw);
+  // Port tack: wind on left → boat heads upper-RIGHT (+close)
+  halfLine(cx, cy, r, close,       '#cc2222', lw);
+
+  // Compass bearing labels near tips (black text)
+  const sbCP = polar(cx, cy, r * 0.70, 360 - close);
+  ctx.font = `bold ${r * 0.115}px Arial`;
+  ctx.fillStyle = '#1a1a1a'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(fmt(windAxis - close), sbCP.x, sbCP.y);
+
+  const ptCP = polar(cx, cy, r * 0.70, close);
+  ctx.fillStyle = '#1a1a1a';
+  ctx.fillText(fmt(windAxis + close), ptCP.x, ptCP.y);
+
+  // ── [C] RUNNING: half-lines from centre ───────────────────
+  // Starboard gybe → lower-LEFT (360-run)
+  halfLine(cx, cy, r, 360 - run, '#2255cc', lw);
+  // Port gybe → lower-RIGHT (+run)
+  halfLine(cx, cy, r, run,       '#2255cc', lw);
+
+  // Compass bearing labels near tips (black text)
+  const sbRP = polar(cx, cy, r * 0.70, 360 - run);
+  ctx.font = `bold ${r * 0.108}px Arial`;
+  ctx.fillStyle = '#1a1a1a'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText(fmt(windAxis - run), sbRP.x, sbRP.y);
+
+  const ptRP = polar(cx, cy, r * 0.70, run);
+  ctx.fillText(fmt(windAxis + run), ptRP.x, ptRP.y);
+
+  // ── GYBE label (between the two running lines) ─────────
+  ctx.font = `bold ${r * 0.100}px Arial`;
+  ctx.fillStyle = '#224499';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+  ctx.fillText('GYBE', cx, cy + r * 0.06);
+
+  // ── [D] WIND ARROW — 風軸方向から中心へ（内円と一緒に回転）──
+  const arBase = r * 0.870;   // shaft start: near outer edge
+  const arTip  = r * 0.320;   // arrowhead tip: toward centre
+  const arHW   = r * 0.058;
+  const arHH   = r * 0.088;
+
+  ctx.strokeStyle = '#1a1a1a';
+  ctx.fillStyle   = '#1a1a1a';
+  ctx.lineWidth   = r * 0.034;
+  ctx.lineCap = 'round';
+
+  // Shaft (from top edge down toward centre)
+  ctx.beginPath();
+  ctx.moveTo(cx, cy - arBase);
+  ctx.lineTo(cx, cy - arTip);
+  ctx.stroke();
+  ctx.lineCap = 'butt';
+
+  // Arrowhead (pointing DOWN / inward)
+  ctx.beginPath();
+  ctx.moveTo(cx,        cy - arTip);          // tip (bottom)
+  ctx.lineTo(cx - arHW, cy - arTip - arHH);  // upper-left
+  ctx.lineTo(cx + arHW, cy - arTip - arHH);  // upper-right
+  ctx.closePath();
+  ctx.fill();
+
+  // "MEAN WIND DIRECTION" text — below arrow tip, above starting line
+  ctx.font = `bold ${r * 0.086}px Arial`;
+  ctx.fillStyle = '#333322';
+  ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+  ctx.fillText('MEAN WIND',  cx, cy - r * 0.218);
+  ctx.fillText('DIRECTION',  cx, cy - r * 0.132);
+
+  ctx.restore(); // end clip + windAxis rotation
+
+  // Border ring
+  ctx.beginPath(); ctx.arc(cx, cy, r, 0, PI2);
+  ctx.strokeStyle = '#998844'; ctx.lineWidth = 2.0; ctx.stroke();
+}
+
+// ═══════════════════════════════════════════════════
+//  [3] COMPASS RING  — rotates by -windAxis
+//      so that windAxis direction appears at the top
+// ═══════════════════════════════════════════════════
+function drawCompassRing(cx, cy) {
+  const ringW = R - Ri;
+
+  ctx.save();
+  // コンパスリングは上マーク方向で回転（markBearがポインター下に来る）
+  ctx.translate(cx, cy);
+  ctx.rotate(-markBear * D2R);
+  ctx.translate(-cx, -cy);
+
+  // Ring background
+  ctx.beginPath();
+  ctx.arc(cx, cy, R,  0, PI2);
+  ctx.arc(cx, cy, Ri, 0, PI2, true);
+  ctx.fillStyle = '#1c1c14';
+  ctx.fill();
+
+  // ── Ticks and numbers ──────────────────────────
+  for (let i = 0; i < 36; i++) {
+    const deg    = i * 10;
+    const isN    = deg === 0;
+    const isCard = deg % 90 === 0;
+    const isMid  = deg % 30 === 0;
+
+    // Tick
+    const tLen = isCard ? ringW * 0.56 : isMid ? ringW * 0.38 : ringW * 0.22;
+    const p1   = polar(cx, cy, R,        deg);
+    const p2   = polar(cx, cy, R - tLen, deg);
+    ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y);
+    ctx.strokeStyle = isCard ? '#aaaA88' : '#4a4a38';
+    ctx.lineWidth   = isCard ? 2 : 1;
+    ctx.stroke();
+
+    // Number (1-36 scale; 0° = '36')
+    const lbl  = i === 0 ? '36' : String(i);
+    const numR = Ri + ringW * 0.620;
+    const pos  = polar(cx, cy, numR, deg);
+    ctx.save();
+    ctx.translate(pos.x, pos.y);
+    ctx.rotate(deg * D2R);  // keep numbers upright in ring's own frame
+    ctx.font = `bold ${ringW * (isCard ? 0.66 : 0.54)}px Arial`;
+    ctx.fillStyle   = isN ? '#ff5555' : isCard ? '#eeeedd' : '#9a9a88';
+    ctx.textAlign   = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(lbl, 0, 0);
+    ctx.restore();
+  }
+
+  // Fine ticks every 2°
+  for (let d = 2; d < 360; d += 2) {
+    if (d % 10 === 0) continue;
+    const p1 = polar(cx, cy, R,               d);
+    const p2 = polar(cx, cy, R - ringW * 0.14, d);
+    ctx.beginPath(); ctx.moveTo(p1.x, p1.y); ctx.lineTo(p2.x, p2.y);
+    ctx.strokeStyle = '#333328'; ctx.lineWidth = 0.7; ctx.stroke();
+  }
+
+  ctx.restore(); // end ring rotation
+
+  // Outer / inner borders (drawn after rotation so they stay circular)
+  ctx.beginPath(); ctx.arc(cx, cy, R,  0, PI2);
+  ctx.strokeStyle = '#55554a'; ctx.lineWidth = 2; ctx.stroke();
+  ctx.beginPath(); ctx.arc(cx, cy, Ri, 0, PI2);
+  ctx.strokeStyle = '#3a3a2e'; ctx.lineWidth = 1.2; ctx.stroke();
+
+  // ── Fixed pointer triangle — OUTSIDE the ring, pointing DOWN into it
+  const tw   = ringW * 0.38;
+  const th   = ringW * 0.50;
+  const tipY = cy - R + ringW * 0.10;      // tip just inside outer edge
+  const baseY = cy - R - th;               // base above the ring
+  ctx.beginPath();
+  ctx.moveTo(cx,      tipY);               // bottom tip
+  ctx.lineTo(cx - tw, baseY);              // upper-left
+  ctx.lineTo(cx + tw, baseY);              // upper-right
+  ctx.closePath();
+  ctx.fillStyle = '#ffdd00';
+  ctx.fill();
+  ctx.strokeStyle = '#aa9900';
+  ctx.lineWidth = 1;
+  ctx.stroke();
+}
+
+// ═══════════════════════════════════════════════════
+//  READOUT
+// ═══════════════════════════════════════════════════
+function updateReadout() {
+  const close = getClose();
+  const run   = getRun();
+
+  // Bearings are relative to wind axis (compass headings)
+  document.getElementById('rv-ww').textContent = fmt(markBear);
+  // Starboard tack heads LEFT of wind (windAxis - close)
+  // Port tack heads RIGHT of wind (windAxis + close)
+  document.getElementById('rv-sb').textContent = fmt(windAxis - close);
+  document.getElementById('rv-pt').textContent = fmt(windAxis + close);
+  document.getElementById('rv-rn').textContent = fmt(markBear + 180);
+}
+
+// ═══════════════════════════════════════════════════
+//  INPUT SYNC
+// ═══════════════════════════════════════════════════
+function bindInputs() {
+  const nW = document.getElementById('n-wind');
+  const nM = document.getElementById('n-mark');
+  const nT = document.getElementById('n-tack');
+  const nJ = document.getElementById('n-jibe');
+
+  // ── 風軸・上マーク (0-359, 入力中もリアルタイム描画) ──
+  function applyWind(v, fixup) {
+    const n = parseInt(v, 10);
+    if (isNaN(n)) return;
+    windAxis = norm(n);
+    if (fixup) nW.value = windAxis;
+    draw();
+  }
+  function applyMark(v, fixup) {
+    const n = parseInt(v, 10);
+    if (isNaN(n)) return;
+    markBear = norm(n);
+    if (fixup) nM.value = markBear;
+    draw();
+  }
+  nW.addEventListener('input',  e => applyWind(e.target.value, false));
+  nW.addEventListener('change', e => applyWind(e.target.value, true));
+  nM.addEventListener('input',  e => applyMark(e.target.value, false));
+  nM.addEventListener('change', e => applyMark(e.target.value, true));
+
+  // ── タッキング・ジャイビング (範囲あり)
+  //    入力中はフィールドに触らず描画のみ。確定時にクランプして表示修正。
+  function applyTack(v, fixup) {
+    const n = parseInt(v, 10);
+    if (isNaN(n)) return;
+    if (fixup) {
+      tackAngle = Math.max(40, Math.min(130, n));
+      nT.value  = tackAngle;
+    } else {
+      if (n < 40 || n > 130) return; // 途中入力中は範囲外は無視
+      tackAngle = n;
+    }
+    draw();
+  }
+  function applyJibe(v, fixup) {
+    const n = parseInt(v, 10);
+    if (isNaN(n)) return;
+    if (fixup) {
+      jibeAngle = Math.max(20, Math.min(100, n));
+      nJ.value  = jibeAngle;
+    } else {
+      if (n < 20 || n > 100) return;
+      jibeAngle = n;
+    }
+    draw();
+  }
+  nT.addEventListener('input',  e => applyTack(e.target.value, false));
+  nT.addEventListener('change', e => applyTack(e.target.value, true));
+  nJ.addEventListener('input',  e => applyJibe(e.target.value, false));
+  nJ.addEventListener('change', e => applyJibe(e.target.value, true));
+}
+
+// ═══════════════════════════════════════════════════
+//  CANVAS DRAG
+//  Inside ri  → rotate markBear (inner white circle)
+//  Outside ri → rotate windAxis (outer disc / compass)
+// ═══════════════════════════════════════════════════
+let drag = { on: false, zone: '', a0: 0, w0: 0, m0: 0 };
+
+function ptAngle(cx, cy) {
+  const rect = canvas.getBoundingClientRect();
+  const x = cx - rect.left  - lsz / 2;
+  const y = cy - rect.top   - lsz / 2;
+  return norm(Math.atan2(y, x) / D2R + 90);
+}
+function ptDist(cx, cy) {
+  const rect = canvas.getBoundingClientRect();
+  const x = cx - rect.left  - lsz / 2;
+  const y = cy - rect.top   - lsz / 2;
+  return Math.hypot(x, y);
+}
+
+function onDown(ex, ey) {
+  drag.on   = true;
+  drag.a0   = ptAngle(ex, ey);
+  drag.w0   = windAxis;
+  drag.m0   = markBear;
+  drag.zone = ptDist(ex, ey) < ri ? 'inner' : 'outer';
+}
+function onMove(ex, ey) {
+  if (!drag.on) return;
+  let delta = ptAngle(ex, ey) - drag.a0;
+  if (delta >  180) delta -= 360;
+  if (delta < -180) delta += 360;
+
+  if (drag.zone === 'outer') {
+    // 外側ドラッグ → 風軸（ディスク + 線が回転）
+    windAxis = norm(Math.round(drag.w0 + delta));
+    document.getElementById('n-wind').value = windAxis;
+  } else {
+    // 内側ドラッグ → 上マーク（矢印が回転）
+    markBear = norm(Math.round(drag.m0 + delta));
+    document.getElementById('n-mark').value = markBear;
+  }
+  draw();
+}
+function onUp() { drag.on = false; }
+
+// Mouse
+canvas.addEventListener('mousedown',  e => onDown(e.clientX, e.clientY));
+canvas.addEventListener('mousemove',  e => onMove(e.clientX, e.clientY));
+canvas.addEventListener('mouseup',    onUp);
+canvas.addEventListener('mouseleave', onUp);
+
+// Touch
+canvas.addEventListener('touchstart', e => {
+  e.preventDefault();
+  onDown(e.touches[0].clientX, e.touches[0].clientY);
+}, { passive: false });
+canvas.addEventListener('touchmove', e => {
+  e.preventDefault();
+  onMove(e.touches[0].clientX, e.touches[0].clientY);
+}, { passive: false });
+canvas.addEventListener('touchend',   e => { e.preventDefault(); onUp(); }, { passive: false });
+
+// ═══════════════════════════════════════════════════
+//  INIT
+// ═══════════════════════════════════════════════════
+bindInputs();
+
+function tryResize() {
+  const wrap = document.getElementById('wrap');
+  if (wrap.clientWidth > 0 && wrap.clientHeight > 0) {
+    resizeCanvas();
+  } else {
+    requestAnimationFrame(tryResize);
+  }
+}
+document.addEventListener('DOMContentLoaded', tryResize);
+window.addEventListener('load', () => setTimeout(resizeCanvas, 60));
+window.addEventListener('resize', resizeCanvas);
+
+// Service Worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
+</script>
+</body>
+</html>
